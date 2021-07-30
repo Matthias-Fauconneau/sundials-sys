@@ -1,4 +1,3 @@
-use cmake::Config;
 use std::env;
 use std::path::PathBuf;
 
@@ -17,19 +16,6 @@ impl bindgen::callbacks::ParseCallbacks for ParseSignedConstants {
     }
 }
 
-
-// Get environment variable from string
-fn get_env_var(var_name: &str) -> Option<String> {
-    env::vars().filter_map(|t| {
-        let (key, value) = t;
-        if key == var_name {
-            Some(value)
-        } else {
-            None
-        }
-    }).next()
-}
-
 fn main() {
     // First, we build the SUNDIALS library, with requested modules with CMake
 
@@ -44,50 +30,13 @@ fn main() {
     }
 
     let static_libraries = feature!("static_libraries");
-    let shared_libraries = match static_libraries {
-        "ON" => "OFF",
-        "OFF" => "ON",
-        _ => "ON"
-    };
     let library_type = match static_libraries {
         "ON" => "static",
         "OFF" => "dylib",
         _ => "static"
     };
 
-    let mut dst_dir = "".to_owned();
-    let mut lib_loc = Some("".to_owned());
-    let mut inc_dir = Some("".to_owned());
-    if cfg!(feature = "build_libraries") {
-        let dst = Config::new("vendor")
-            .define("CMAKE_INSTALL_LIBDIR", "lib")
-            .define("BUILD_STATIC_LIBS", static_libraries)
-            .define("BUILD_SHARED_LIBS", shared_libraries)
-            .define("BUILD_TESTING", "OFF")
-            .define("EXAMPLES_INSTALL", "OFF")
-            .define("BUILD_ARKODE", feature!("arkode"))
-            .define("BUILD_CVODE", feature!("cvode"))
-            .define("BUILD_CVODES", feature!("cvodes"))
-            .define("BUILD_IDA", feature!("ida"))
-            .define("BUILD_IDAS", feature!("idas"))
-            .define("BUILD_KINSOL", feature!("kinsol"))
-            .define("OPENMP_ENABLE", feature!("nvecopenmp"))
-            .define("PTHREAD_ENABLE", feature!("nvecpthreads"))
-            .build();
-        dst_dir = format!("{}", dst.display());
-        lib_loc = Some(format!("{}/lib", dst_dir));
-        inc_dir = Some(format!("{}/include", dst_dir));
-    } else {
-        lib_loc = get_env_var("SUNDIALS_LIBRARY_DIR");
-        inc_dir = get_env_var("SUNDIALS_INCLUDE_DIR");
-    }
-
-    // Second, we let Cargo know about the library files
-
-    match lib_loc {
-        Some(loc) => println!("cargo:rustc-link-search=native={}", loc),
-        None => (),
-    }
+    // let Cargo know about the library files
     println!("cargo:rustc-link-lib={}=sundials_nvecserial", library_type);
     println!("cargo:rustc-link-lib={}=sundials_sunlinsolband", library_type);
     println!("cargo:rustc-link-lib={}=sundials_sunlinsoldense", library_type);
@@ -126,10 +75,6 @@ fn main() {
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindgen::Builder::default()
         .header("wrapper.h")
-        .clang_arg(match inc_dir {
-            Some(dir) => format!("-I{}", dir),
-            None => "".to_owned(),
-        })
         .clang_args(&[
             define!("arkode", ARKODE),
             define!("cvode", CVODE),
