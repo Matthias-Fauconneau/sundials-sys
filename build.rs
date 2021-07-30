@@ -78,14 +78,14 @@ fn main() {
         lib_loc = Some(format!("{}/lib", dst_dir));
         inc_dir = Some(format!("{}/include", dst_dir));
     } else {
-        lib_loc = get_env_var("SUNDIALS_LIBRARY_DIR"); 
+        lib_loc = get_env_var("SUNDIALS_LIBRARY_DIR");
         inc_dir = get_env_var("SUNDIALS_INCLUDE_DIR");
     }
 
     // Second, we let Cargo know about the library files
 
     match lib_loc {
-        Some(loc) => println!("cargo:rustc-link-search=native={}", loc), 
+        Some(loc) => println!("cargo:rustc-link-search=native={}", loc),
         None => (),
     }
     println!("cargo:rustc-link-lib={}=sundials_nvecserial", library_type);
@@ -109,7 +109,7 @@ fn main() {
             })*
         }
     }
-    link! {"arkode", "cvode", "cvodes", "cvodes", "ida", "idas", "kinsol", "nvecopenmp", "nvecpthreads"}
+    link! {"arkode", "cvode", "cvodes", "cvodes", "ida", "idas", "kinsol", "nvecopenmp", "nvecpthreads", "nveccuda"}
 
     // Third, we use bindgen to generate the Rust types
 
@@ -139,6 +139,7 @@ fn main() {
             define!("kinsol", KINSOL),
             define!("nvecopenmp", OPENMP),
             define!("nvecpthreads", PTHREADS),
+            define!("nveccuda", CUDA),
         ])
         .parse_callbacks(Box::new(ParseSignedConstants))
         .generate()

@@ -16,6 +16,10 @@
 #include <nvector/nvector_openmp.h>
 #endif
 
+#if USE_CUDA
+#include <nvector/nvector_cuda.h>
+#endif
+
 #if USE_CVODE
 #include <cvode/cvode.h>
 #endif
